@@ -29,6 +29,7 @@ A directive for providing suggestions while typing into the field
 ###
 
 angular.module("Mac").directive "macAutocomplete", [
+  "$animate"
   "$http"
   "$filter"
   "$compile"
@@ -36,7 +37,7 @@ angular.module("Mac").directive "macAutocomplete", [
   "$parse"
   "$rootScope"
   "keys"
-  ($http, $filter, $compile, $timeout, $parse, $rootScope, keys) ->
+  ($animate, $http, $filter, $compile, $timeout, $parse, $rootScope, keys) ->
     restrict:    "E"
     templateUrl: "template/autocomplete.html"
     replace:     true
@@ -58,14 +59,14 @@ angular.module("Mac").directive "macAutocomplete", [
       currentAutocomplete = []
       timeoutId           = null
 
-      $menuScope       = $rootScope.$new()
+      $menuScope       = $rootScope.$new(true)
       $menuScope.items = []
       $menuScope.index = 0
 
       ctrl.$parsers.push (value) ->
         if value and not disabled($scope)
+          $timeout.cancel timeoutId if timeoutId?
           if delay > 0
-            $timeout.cancel timeoutId if timeoutId?
             timeoutId = $timeout ->
               queryData value
             , delay
@@ -182,16 +183,18 @@ angular.module("Mac").directive "macAutocomplete", [
         "mac-menu-style":  "style"
         "mac-menu-select": "select(index)"
         "mac-menu-index":  "index"
+
       if inside
-        element.after $compile(menuEl) $menuScope
+        $animate.enter menuEl, null, element
       else
-        angular.element(document.body).append $compile(menuEl) $menuScope
+        $animate.enter menuEl, angular.element(document.body)
+      $compile(menuEl) $menuScope
 
       #
       # @event
-      # @name resetAutocomplete
+      # @name reset-mac-autocomplete
       # @description
       # Event to reset autocomplete
       #
-      $scope.$on "resetAutocomplete", -> reset()
+      $scope.$on "reset-mac-autocomplete", -> reset()
 ]
